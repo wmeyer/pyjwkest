@@ -239,6 +239,24 @@ class JWSig(JWT):
 
         return True
 
+    def is_jws(self, jws):
+        try:
+            jwt = JWSig().unpack(jws)
+        except Exception:
+            return False
+
+        if "alg" not in jwt.headers:
+            raise ValueError("Missing 'alg' in headers")
+
+        if jwt.headers["alg"] is None:
+            jwt.headers["alg"] = "none"
+
+        if jwt.headers["alg"] not in SIGNER_ALGS:
+            raise UnknownSignerAlg(f"Unknown signer algorithm: {jwt.headers['alg']}")
+
+        self.jwt = jwt
+        return True
+
 
 class JWx(object):
     args = ["alg", "jku", "jwk", "x5u", "x5t", "x5c", "kid", "typ", "cty",
@@ -709,22 +727,17 @@ class JWS(JWx):
         except Exception:
             return False
 
-        try:
-            assert "alg" in jwt.headers
-        except AssertionError:
-            return False
-        else:
-            if jwt.headers["alg"] is None:
-                jwt.headers["alg"] = "none"
+        if "alg" not in jwt.headers:
+            raise ValueError("Missing 'alg' in headers")
 
-            try:
-                assert jwt.headers["alg"] in SIGNER_ALGS
-            except AssertionError:
-                logger.debug("UnknownSignerAlg: %s" % jwt.headers["alg"])
-                return False
-            else:
-                self.jwt = jwt
-                return True
+        if jwt.headers["alg"] is None:
+            jwt.headers["alg"] = "none"
+
+        if jwt.headers["alg"] not in SIGNER_ALGS:
+            raise UnknownSignerAlg(f"Unknown signer algorithm: {jwt.headers['alg']}")
+
+        self.jwt = jwt
+        return True
 
 
 def factory(token):

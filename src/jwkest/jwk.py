@@ -346,16 +346,16 @@ class Key(object):
         return True
 
     def __eq__(self, other):
-        try:
-            assert isinstance(other, Key)
-            assert set(self.__dict__.keys()) == set(other.__dict__.keys())
+        if not isinstance(other, Key):
+            raise ValueError("Other object is not an instance of Key")
+        if set(self.__dict__.keys()) != set(other.__dict__.keys()):
+            raise ValueError("Attributes of the keys do not match")
 
-            for key in self.public_members:
-                assert getattr(other, key) == getattr(self, key)
-        except AssertionError:
-            return False
-        else:
-            return True
+        for key in self.public_members:
+            if getattr(other, key) != getattr(self, key):
+                raise ValueError(f"Attribute '{key}' does not match")
+
+        return True
 
     def keys(self):
         return list(self.to_dict().keys())
